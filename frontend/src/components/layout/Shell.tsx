@@ -1,21 +1,19 @@
 import {
   Bookmark,
-  Languages,
   LayoutDashboard,
+  Languages,
   LogOut,
-  Menu,
   MessageSquare,
   Moon,
   Search,
+  ShieldCheck,
   Sun,
   Type,
   User,
-  X,
 } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { useState } from 'react'
-import { fontSizeClass, headingClass, useApp } from '../../context/AppContext'
+import { useApp } from '../../context/AppContext'
 import type { TabId } from '../../types'
+import type { TranslationKey } from '../../i18n'
 
 interface ShellProps {
   children: React.ReactNode
@@ -25,7 +23,7 @@ interface ShellProps {
   onLogout: () => void
 }
 
-const tabs: { id: TabId; icon: typeof LayoutDashboard; labelKey: 'navDashboard' | 'navChat' | 'navSchemes' | 'navSaved' | 'navProfile' }[] = [
+const tabs: { id: TabId; icon: typeof LayoutDashboard; labelKey: TranslationKey }[] = [
   { id: 'dashboard', icon: LayoutDashboard, labelKey: 'navDashboard' },
   { id: 'chat', icon: MessageSquare, labelKey: 'navChat' },
   { id: 'schemes', icon: Search, labelKey: 'navSchemes' },
@@ -35,150 +33,145 @@ const tabs: { id: TabId; icon: typeof LayoutDashboard; labelKey: 'navDashboard' 
 
 export function Shell({ children, district, displayName, apiOnline, onLogout }: ShellProps) {
   const { tr, lang, setLang, isDark, setIsDark, fontSize, setFontSize, activeTab, setActiveTab } = useApp()
-  const [mobileOpen, setMobileOpen] = useState(false)
 
   const cycleFont = () => {
     setFontSize(fontSize === 'normal' ? 'large' : fontSize === 'large' ? 'extra-large' : 'normal')
   }
 
   return (
-    <div className={`min-h-screen ${fontSizeClass(fontSize)} ${isDark ? 'bg-[#0a0f1a] text-stone-100' : 'bg-[#f6f4ef] text-stone-900'}`}>
-      <header className={`sticky top-0 z-40 border-b backdrop-blur-xl ${isDark ? 'border-white/8 bg-[#0a0f1a]/85' : 'border-stone-200/80 bg-[#f6f4ef]/90'}`}>
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 font-display text-sm font-bold text-stone-950">
-              JM
+    <div className="min-h-screen bg-canvas text-ink">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-brand focus:px-4 focus:py-2 focus:text-sm focus:text-brand-ink"
+      >
+        Skip to content
+      </a>
+
+      <header className="sticky top-0 z-40 border-b border-line bg-canvas/85 backdrop-blur-xl">
+        <div className="shell-container flex h-16 items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand font-display font-bold text-brand-ink shadow-soft">
+              <ShieldCheck className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className={`font-display text-lg font-semibold ${headingClass(fontSize, 3)}`}>{tr('brand')}</span>
-                <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-400">
-                  {tr('demoBadge')}
-                </span>
+                <span className="truncate font-display text-lg font-semibold tracking-tight">{tr('brand')}</span>
+                <span className="badge hidden bg-accent/12 text-accent sm:inline-flex">{tr('demoBadge')}</span>
               </div>
-              <p className="text-[11px] text-stone-500">{district}</p>
+              <p className="truncate text-[11px] text-muted">{district} · {tr('brandTag')}</p>
             </div>
           </div>
 
-          <div className="hidden items-center gap-2 lg:flex">
+          <div className="flex items-center gap-2">
             <StatusPill online={apiOnline} label={apiOnline ? tr('apiOnline') : tr('apiOffline')} />
-            <IconButton onClick={cycleFont} title="Font size">
+            <button type="button" onClick={cycleFont} className="icon-btn" title="Text size" aria-label="Change text size">
               <Type className="h-4 w-4" />
-            </IconButton>
-            <IconButton onClick={() => setLang(lang === 'en' ? 'te' : 'en')} title="Language">
+            </button>
+            <button
+              type="button"
+              onClick={() => setLang(lang === 'en' ? 'te' : 'en')}
+              className="icon-btn"
+              title="Language"
+              aria-label="Toggle language"
+            >
               <Languages className="h-4 w-4" />
-            </IconButton>
-            <IconButton onClick={() => setIsDark(!isDark)} title="Theme">
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsDark(!isDark)}
+              className="icon-btn"
+              title="Theme"
+              aria-label="Toggle theme"
+            >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </IconButton>
-            <div className="ml-2 flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 font-semibold text-stone-950">
+            </button>
+
+            <div className="ml-1 hidden items-center gap-2 rounded-full border border-line bg-surface py-1 pl-1 pr-3 sm:flex">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-xs font-semibold text-brand-ink">
                 {displayName.charAt(0).toUpperCase()}
               </span>
-              <span className="font-medium text-stone-300">{displayName}</span>
+              <span className="max-w-[9rem] truncate text-xs font-medium">{displayName}</span>
             </div>
-            <IconButton onClick={onLogout} title={tr('logout')}>
-              <LogOut className="h-4 w-4 text-red-400" />
-            </IconButton>
-          </div>
 
-          <div className="flex items-center gap-2 lg:hidden">
-            <IconButton onClick={cycleFont}>
-              <Type className="h-4 w-4" />
-            </IconButton>
-            <IconButton onClick={() => setMobileOpen((v) => !v)}>
-              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </IconButton>
+            <button type="button" onClick={onLogout} className="icon-btn" title={tr('logout')} aria-label={tr('logout')}>
+              <LogOut className="h-4 w-4 text-danger" />
+            </button>
           </div>
         </div>
       </header>
 
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.nav
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className={`border-b lg:hidden ${isDark ? 'border-white/8 bg-[#0a0f1a]' : 'border-stone-200 bg-white'}`}
-          >
-            <div className="space-y-1 px-4 py-3">
-              {tabs.map((tab) => (
-                <NavButton
-                  key={tab.id}
-                  active={activeTab === tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id)
-                    setMobileOpen(false)
-                  }}
-                  icon={tab.icon}
-                  label={tr(tab.labelKey)}
-                  isDark={isDark}
-                />
-              ))}
-              <button
-                type="button"
-                onClick={onLogout}
-                className="mt-2 w-full rounded-xl px-3 py-2 text-left text-sm text-red-400"
-              >
-                {tr('logout')}
-              </button>
-            </div>
-          </motion.nav>
-        )}
-      </AnimatePresence>
-
-      <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:py-8">
+      <div className="shell-container flex gap-8 py-6 lg:py-8">
         <aside className="hidden w-60 shrink-0 lg:block">
-          <nav className="space-y-1">
+          <nav className="sticky top-24 space-y-1" aria-label="Primary">
             {tabs.map((tab) => (
-              <NavButton
+              <SideNavButton
                 key={tab.id}
                 active={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 icon={tab.icon}
                 label={tr(tab.labelKey)}
-                isDark={isDark}
               />
             ))}
           </nav>
         </aside>
 
-        <main className="min-w-0 flex-1">{children}</main>
+        <main id="main" className="min-w-0 flex-1 pb-24 lg:pb-0">
+          {children}
+        </main>
       </div>
 
-      <footer className={`border-t py-8 ${isDark ? 'border-white/8 text-stone-500' : 'border-stone-200 text-stone-600'}`}>
-        <div className="mx-auto max-w-7xl px-4 text-center text-xs sm:px-6">
+      <footer className="border-t border-line py-10">
+        <div className="shell-container flex flex-col items-center gap-1 text-center text-xs text-muted">
           <p>{tr('footer')}</p>
-          <p className="mt-1 opacity-70">{tr('footerNote')}</p>
+          <p className="opacity-80">{tr('footerNote')}</p>
         </div>
       </footer>
+
+      {/* Mobile bottom navigation — large, thumb-reachable targets (Fitts's Law). */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-canvas/92 backdrop-blur-xl lg:hidden" aria-label="Primary">
+        <div className="mx-auto grid max-w-md grid-cols-5">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            const active = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className="relative flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium"
+                aria-current={active ? 'page' : undefined}
+              >
+                <span className={`flex h-9 w-12 items-center justify-center rounded-xl transition-colors ${active ? 'bg-brand/12 text-brand' : 'text-muted'}`}>
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className={active ? 'text-brand' : 'text-muted'}>{tr(tab.labelKey)}</span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
     </div>
   )
 }
 
-function NavButton({
+function SideNavButton({
   active,
   onClick,
   icon: Icon,
   label,
-  isDark,
 }: {
   active: boolean
   onClick: () => void
   icon: typeof LayoutDashboard
   label: string
-  isDark: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-        active
-          ? 'bg-amber-500 text-stone-950'
-          : isDark
-            ? 'text-stone-400 hover:bg-white/5 hover:text-stone-100'
-            : 'text-stone-600 hover:bg-stone-200/60 hover:text-stone-900'
+      aria-current={active ? 'page' : undefined}
+      className={`relative flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200 ${
+        active ? 'bg-brand text-brand-ink shadow-soft' : 'text-muted hover:bg-elevated hover:text-ink'
       }`}
     >
       <Icon className="h-4 w-4 shrink-0" />
@@ -187,27 +180,11 @@ function NavButton({
   )
 }
 
-function IconButton({ children, onClick, title }: { children: React.ReactNode; onClick: () => void; title?: string }) {
-  return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      className="rounded-lg border border-white/10 p-2 text-stone-400 transition hover:bg-white/5 hover:text-stone-100"
-    >
-      {children}
-    </button>
-  )
-}
-
 function StatusPill({ online, label }: { online: boolean | null; label: string }) {
+  const tone = online ? 'text-success' : 'text-muted'
   return (
-    <span
-      className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-medium ${
-        online ? 'bg-emerald-500/10 text-emerald-400' : 'bg-stone-500/10 text-stone-400'
-      }`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-stone-500'}`} />
+    <span className={`badge hidden md:inline-flex bg-elevated ${tone}`} title={label}>
+      <span className={`h-1.5 w-1.5 rounded-full ${online ? 'animate-pulse-subtle bg-success' : 'bg-muted'}`} />
       {label}
     </span>
   )

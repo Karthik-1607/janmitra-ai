@@ -6,8 +6,12 @@ logger = logging.getLogger("llm")
 
 SYSTEM_PROMPT = (
     "You are JanMitra AI, a helpful assistant for Andhra Pradesh government welfare schemes. "
+    "The current AP welfare catalogue includes: NTR Bharosa Pension, Annadata Sukhibhava, "
+    "Aadabidda Nidhi, Talliki Vandanam, Deepam-2, Dr. NTR Vaidya Seva (Aarogyasri), "
+    "Chandranna Pelli Kanuka, Free Bus Travel for Women and Nirudyoga Bruthi. "
     "Answer clearly in the user's language (English or Telugu). Be concise, accurate, and polite. "
-    "Do not invent scheme details. If unsure, say so and suggest checking the official portal."
+    "Do not invent scheme details, amounts or deadlines. If unsure, say so and suggest "
+    "checking the official portal or dialling 1902."
 )
 
 
@@ -66,62 +70,88 @@ def _ollama_complete(user_prompt: str) -> str | None:
 def rule_based_response(user_prompt: str) -> tuple[str, list[dict]]:
     prompt_lower = user_prompt.lower()
 
-    if any(k in prompt_lower for k in ("rythu", "bharosa", "farmer", "రైతు")):
+    if any(k in prompt_lower for k in ("annadata", "sukhibhava", "farmer", "రైతు", "rythu")):
         return (
-            "YSR Rythu Bharosa provides ₹13,500 per year to eligible farmer families in Andhra Pradesh, "
-            "paid in installments. You typically need farmer registration, income below ₹2.5 lakh, "
-            "Aadhaar, income certificate, and land passbook.",
+            "Annadata Sukhibhava gives ₹20,000 per farming family per year (₹14,000 central PM-KISAN "
+            "+ ₹6,000 state share), paid in three instalments. Both land-owning and tenant farmers "
+            "are covered. You need farmer registration, Aadhaar, land/tenancy proof, bank account "
+            "and an income certificate.",
             [
-                {"title": "YSR Rythu Bharosa Portal", "url": "https://ysrrythubharosa.ap.gov.in"},
-                {"title": "AP Agriculture Department", "url": "https://apagrisnet.gov.in"},
+                {"title": "Annadata Sukhibhava Portal", "url": "https://annadathasukhibhava.ap.gov.in"},
+                {"title": "AP Agriculture Department", "url": "https://agriculture.ap.gov.in"},
             ],
         )
 
-    if any(k in prompt_lower for k in ("vidya", "deevena", "student", "scholarship", "విద్య")):
+    if any(k in prompt_lower for k in ("pension", "bharosa", "elderly", "widow", "పించన్", "పెన్షన్")):
         return (
-            "Jagananna Vidya Deevena offers full fee reimbursement for eligible students in higher education. "
-            "Common requirements include student status, SC/ST/OBC/EBC category, and family income up to ₹2.5 lakh.",
-            [{"title": "JnanaBhumi Portal", "url": "https://jnanabhumi.ap.gov.in"}],
-        )
-
-    if any(k in prompt_lower for k in ("pension", "kanuka", "elderly", "పించన్", "పెన్షన్")):
-        return (
-            "YSR Pension Kanuka provides ₹3,000 monthly pension to senior citizens (60+ years), widows, and disabled individuals. "
-            "Requires age >= 60 (or disability proof), annual income <= ₹1.2 lakh, and Rice Card.",
+            "NTR Bharosa Pension gives ₹4,000 per month to senior citizens (60+) and widows, and "
+            "₹6,000 or more to persons with disabilities. Family income must be within the prescribed "
+            "limit, and you need Aadhaar, an income certificate, a Rice Card and a bank account. "
+            "Apply at your village/ward Sachivalayam.",
             [{"title": "AP Social Security Pensions", "url": "https://sspensions.ap.gov.in"}],
         )
 
-    if any(k in prompt_lower for k in ("cheyutha", "women", "చేయూత", "మహిళ")):
+    if any(k in prompt_lower for k in ("aadabidda", "cheyutha", "women", "చేయూత", "మహిళ")):
         return (
-            "YSR Cheyutha provides financial assistance of ₹18,750 per year for 4 years (total ₹75,000) "
-            "to SC, ST, OBC, and Minority women aged between 45 and 60.",
-            [{"title": "AP Government Portal", "url": "https://ap.gov.in"}],
+            "Aadabidda Nidhi provides ₹1,500 per month (₹18,000/year) to women aged 18–59 from "
+            "households with annual income up to ₹2.5 lakh. It succeeds the earlier YSR Cheyutha scheme.",
+            [{"title": "Aadabidda Nidhi (Beneficiary Management)", "url": "https://bm-sgsw.ap.gov.in/BM/"}],
         )
 
-    if any(k in prompt_lower for k in ("aarogya", "health", "insurance", "ఆరోగ్యశ్రీ")):
+    if any(k in prompt_lower for k in ("talliki", "vandanam", "amma", "vodi", "school", "mother", "అమ్మ")):
         return (
-            "YSR Aarogyasri provides universal healthcare coverage with free cashless treatment up to ₹5 Lakhs per year "
-            "for eligible families with annual income up to ₹5 Lakhs.",
-            [{"title": "YSR Aarogyasri Health Care Trust", "url": "https://aarogyasri.ap.gov.in"}],
+            "Talliki Vandanam gives ₹15,000 per school-going child (Class 1–12) per year, credited "
+            "to the mother's account. Family annual income must not exceed ₹2.5 lakh.",
+            [{"title": "Talliki Vandanam (Beneficiary Management)", "url": "https://bm-sgsw.ap.gov.in/BM/"}],
         )
 
-    if any(k in prompt_lower for k in ("amma", "vodi", "mother", "అమ్మ ఒడి")):
+    if any(k in prompt_lower for k in ("deepam", "lpg", "gas", "cylinder", "దీపం")):
         return (
-            "Jagananna Amma Vodi provides ₹15,000 annual financial aid directly to mothers who send their children to school (Class 1-12). "
-            "Family annual income limit is ₹2.5 Lakhs.",
-            [{"title": "JnanaBhumi Portal", "url": "https://jnanabhumi.ap.gov.in"}],
+            "Deepam-2 provides 3 free LPG cylinders per year to eligible BPL women to promote clean "
+            "cooking fuel.",
+            [{"title": "AP Civil Supplies", "url": "https://civilsupplies.ap.gov.in"}],
+        )
+
+    if any(k in prompt_lower for k in ("vaidya", "aarogya", "health", "insurance", "ఆరోగ్యశ్రీ")):
+        return (
+            "Dr. NTR Vaidya Seva (Aarogyasri) provides cashless treatment of up to ₹25 lakh per family "
+            "per year at network hospitals for families with annual income up to ₹5 lakh.",
+            [{"title": "Dr. NTR Vaidya Seva", "url": "https://drntrvaidyaseva.ap.gov.in"}],
+        )
+
+    if any(k in prompt_lower for k in ("pelli", "kanuka", "marriage", "పెళ్లి")):
+        return (
+            "Chandranna Pelli Kanuka provides one-time marriage assistance of ₹10,000 to ₹1,00,000 "
+            "to brides from economically weaker households (family income up to ₹2 lakh).",
+            [{"title": "SERP – Women & Social Welfare", "url": "https://serp.ap.gov.in"}],
+        )
+
+    if any(k in prompt_lower for k in ("bus", "travel", "apsrtc", "బస్")):
+        return (
+            "Women can travel free of cost in APSRTC ordinary and Palle Velugu bus services across "
+            "the 26 districts of Andhra Pradesh.",
+            [{"title": "APSRTC", "url": "https://apsrtconline.in"}],
+        )
+
+    if any(k in prompt_lower for k in ("nirudyoga", "unemploy", "bruthi", "నిరుద్యోగ")):
+        return (
+            "Nirudyoga Bruthi gives ₹1,000 per month to unemployed educated youth aged 22–35 (family "
+            "income up to ₹2.5 lakh) while they seek employment.",
+            [{"title": "AP Employment & Training (job-seeker registration)", "url": "https://employment.ap.gov.in"}],
         )
 
     if any(k in prompt_lower for k in ("eligib", "qualify", "అర్హ")):
         return (
-            "Open your Profile, enter accurate details, then check Discover Schemes. "
-            "JanMitra runs each scheme's rules against your profile and shows pass/fail for every criterion.",
+            "Open your Profile, enter accurate details, then check Schemes. JanMitra runs each scheme's "
+            "rules against your profile and shows pass/fail for every criterion.",
             [{"title": "AP Official Portal", "url": "https://www.ap.gov.in"}],
         )
 
     return (
-        "I can help with Andhra Pradesh welfare schemes such as YSR Rythu Bharosa, Jagananna Vidya Deevena, "
-        "YSR Pension Kanuka, YSR Cheyutha, YSR Aarogyasri, and Jagananna Amma Vodi. Ask about eligibility, documents, or benefits — in English or Telugu.",
+        "I can help with current Andhra Pradesh welfare schemes such as NTR Bharosa Pension, "
+        "Annadata Sukhibhava, Aadabidda Nidhi, Talliki Vandanam, Deepam-2, Dr. NTR Vaidya Seva, "
+        "Chandranna Pelli Kanuka and Nirudyoga Bruthi. Ask about eligibility, documents or benefits — "
+        "in English or Telugu. You can also dial 1902 for the AP helpline.",
         [{"title": "AP Official Portal", "url": "https://www.ap.gov.in"}],
     )
 

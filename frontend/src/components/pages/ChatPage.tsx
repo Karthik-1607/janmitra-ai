@@ -1,64 +1,72 @@
-import { Loader2, Send, Sparkles } from 'lucide-react'
-import { FormEvent, useRef, useEffect } from 'react'
+import { FormEvent, useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
+import { SendHorizontal, Sparkles } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import type { ChatMessage } from '../../types'
+import type { TranslationKey } from '../../i18n'
 
 interface ChatPageProps {
   messages: ChatMessage[]
   input: string
   loading: boolean
   onInputChange: (value: string) => void
-  onSend: (e: FormEvent) => void
+  onSend: (text: string) => void
 }
 
+const SUGGESTIONS: TranslationKey[] = ['chatSuggest1', 'chatSuggest2', 'chatSuggest3', 'chatSuggest4']
+
 export function ChatPage({ messages, input, loading, onInputChange, onSend }: ChatPageProps) {
-  const { tr, isDark } = useApp()
+  const { tr } = useApp()
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages, loading])
 
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    onSend(input)
+  }
+
+  const showSuggestions = messages.filter((m) => m.role === 'user').length === 0
+
   return (
-    <div
-      className={`flex h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-2xl border ${
-        isDark ? 'border-white/8 bg-white/[0.02]' : 'border-stone-200 bg-white'
-      }`}
-    >
-      <div className={`flex items-center gap-3 border-b px-4 py-3 ${isDark ? 'border-white/8' : 'border-stone-200'}`}>
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-stone-950">
-          <Sparkles className="h-4 w-4" />
+    <div className="card flex h-[calc(100dvh-13rem)] min-h-[28rem] flex-col overflow-hidden lg:h-[calc(100dvh-12rem)]">
+      <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-brand-ink">
+          <Sparkles className="h-5 w-5" />
         </div>
         <div>
           <p className="text-sm font-semibold">{tr('chatTitle')}</p>
-          <p className="text-[11px] text-emerald-400">{tr('chatLive')}</p>
+          <p className="flex items-center gap-1.5 text-[11px] text-success">
+            <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse-subtle" />
+            {tr('chatLive')}
+          </p>
         </div>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+      <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:p-5">
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-xl rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed sm:max-w-xl ${
                 msg.role === 'user'
-                  ? 'bg-amber-500 text-stone-950'
-                  : isDark
-                    ? 'border border-white/8 bg-[#111827] text-stone-200'
-                    : 'border border-stone-200 bg-stone-50 text-stone-800'
+                  ? 'rounded-br-md bg-brand text-brand-ink shadow-soft'
+                  : 'rounded-bl-md border border-line bg-elevated text-ink'
               }`}
             >
               <p className="whitespace-pre-wrap">{msg.content}</p>
               {msg.sources && msg.sources.length > 0 && (
-                <div className={`mt-3 border-t pt-2 text-[11px] ${isDark ? 'border-white/10' : 'border-stone-200'}`}>
-                  <p className="mb-1 font-semibold text-stone-500">{tr('sources')}</p>
+                <div className="mt-3 border-t border-line pt-2.5 text-[11px]">
+                  <p className="mb-1.5 font-semibold uppercase tracking-wide text-muted">{tr('sources')}</p>
                   <div className="flex flex-wrap gap-2">
                     {msg.sources.map((source) => (
                       <a
                         key={source.url}
                         href={source.url}
                         target="_blank"
-                        rel="noreferrer"
-                        className="text-amber-500 hover:underline"
+                        rel="noreferrer noopener"
+                        className="rounded-md bg-surface px-2 py-1 text-brand hover:underline"
                       >
                         {source.title}
                       </a>
@@ -71,34 +79,51 @@ export function ChatPage({ messages, input, loading, onInputChange, onSend }: Ch
         ))}
 
         {loading && (
-          <div className="flex items-center gap-2 text-sm text-stone-500">
-            <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+          <div className="flex items-center gap-2.5 text-sm text-muted">
+            <span className="flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <motion.span
+                  key={i}
+                  className="h-2 w-2 rounded-full bg-brand"
+                  animate={{ opacity: [0.25, 1, 0.25] }}
+                  transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.15 }}
+                />
+              ))}
+            </span>
             {tr('chatThinking')}
           </div>
         )}
         <div ref={bottomRef} />
       </div>
 
-      <form
-        onSubmit={onSend}
-        className={`flex gap-2 border-t p-4 ${isDark ? 'border-white/8' : 'border-stone-200'}`}
-      >
+      {showSuggestions && (
+        <div className="border-t border-line px-4 py-3">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">{tr('chatSuggestTitle')}</p>
+          <div className="flex flex-wrap gap-2">
+            {SUGGESTIONS.map((key) => (
+              <button key={key} type="button" onClick={() => onSend(tr(key))} className="chip">
+                {tr(key)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={submit} className="flex gap-2 border-t border-line p-4">
         <input
           value={input}
           onChange={(e) => onInputChange(e.target.value)}
           placeholder={tr('chatPlaceholder')}
-          className={`flex-1 rounded-xl border px-4 py-3 text-sm outline-none ring-amber-500/30 focus:ring-2 ${
-            isDark
-              ? 'border-white/10 bg-[#0a0f1a] text-stone-100 placeholder:text-stone-500'
-              : 'border-stone-200 bg-white text-stone-900'
-          }`}
+          aria-label={tr('chatPlaceholder')}
+          className="input"
         />
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="rounded-xl bg-amber-500 px-4 py-3 text-stone-950 transition hover:bg-amber-400 disabled:opacity-50"
+          className="btn-primary shrink-0 px-4"
+          aria-label="Send message"
         >
-          <Send className="h-4 w-4" />
+          <SendHorizontal className="h-4 w-4" />
         </button>
       </form>
     </div>

@@ -12,6 +12,28 @@ scheme_documents = Table(
     Column('is_mandatory', Boolean, default=True)
 )
 
+class SeedMeta(Base):
+    """Tracks data seeding version so the demo dataset can be refreshed safely."""
+    __tablename__ = "seed_meta"
+
+    key = Column(String(50), primary_key=True)
+    value = Column(String(100), nullable=False)
+
+
+class SchemeUpdate(Base):
+    """Latest informational snapshot scraped from an official portal."""
+    __tablename__ = "scheme_updates"
+
+    id = Column(String(36), primary_key=True, server_default=func.gen_random_uuid())
+    scheme_code = Column(String(100), nullable=False, index=True)
+    source_url = Column(String(512), nullable=False)
+    source_label = Column(String(255))
+    headline = Column(Text)
+    amounts = Column(JSON)
+    excerpt = Column(Text)
+    fetched_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class Department(Base):
     __tablename__ = "departments"
 

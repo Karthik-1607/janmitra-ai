@@ -105,6 +105,7 @@ class RuleMatchStatus(BaseModel):
 class EligibilityCheckResult(BaseModel):
     scheme_id: str
     scheme_name: str
+    scheme_code: Optional[str] = None
     eligible: bool
     benefits_summary: str
     rules_checked: List[RuleMatchStatus]
@@ -112,6 +113,23 @@ class EligibilityCheckResult(BaseModel):
     official_website: Optional[str] = None
     helpline: Optional[str] = None
     pdf_source_url: Optional[str] = None
+    category: Optional[str] = None
+    category_code: Optional[str] = None
+    department: Optional[str] = None
+
+# --- LIVE SOURCE SCHEMAS ---
+class SchemeUpdateResponse(BaseModel):
+    scheme_code: str
+    source_url: str
+    source_label: Optional[str] = None
+    headline: Optional[str] = None
+    amounts: Optional[List[str]] = None
+    excerpt: Optional[str] = None
+    fetched_at: datetime
+
+    class Config:
+        from_attributes = True
+
 
 # --- MOCK CHAT SCHEMAS ---
 class ChatMessageCreate(BaseModel):

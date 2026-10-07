@@ -67,12 +67,20 @@ export function fontSizeClass(size: FontSize): string {
   return 'text-base'
 }
 
+/**
+ * Golden-ratio display scale (16 -> 26 -> 42 -> 68). The user's chosen font size
+ * shifts the scale up so accessibility settings propagate through every heading.
+ */
 export function headingClass(size: FontSize, level: 1 | 2 | 3): string {
   if (level === 1) {
-    return size === 'extra-large' ? 'text-4xl' : size === 'large' ? 'text-3xl' : 'text-2xl sm:text-3xl'
+    return size === 'extra-large'
+      ? 'text-display-lg'
+      : size === 'large'
+        ? 'text-display'
+        : 'text-display-sm sm:text-display'
   }
   if (level === 2) {
-    return size === 'extra-large' ? 'text-2xl' : size === 'large' ? 'text-xl' : 'text-lg sm:text-xl'
+    return size === 'extra-large' ? 'text-display' : size === 'large' ? 'text-display-sm' : 'text-2xl'
   }
-  return size === 'extra-large' ? 'text-xl' : size === 'large' ? 'text-lg' : 'text-sm sm:text-base'
+  return size === 'extra-large' ? 'text-xl' : size === 'large' ? 'text-lg' : 'text-base'
 }

@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     
     # OCR and Voice Settings
     UPLOAD_DIR: str = Field(default="./uploads", validation_alias="UPLOAD_DIR")
+
+    # Keyless live sync of official AP scheme portals (no API key required)
+    LIVE_SYNC_ENABLED: bool = Field(default=True, validation_alias="LIVE_SYNC_ENABLED")
+    LIVE_SYNC_INTERVAL_HOURS: int = Field(default=6, validation_alias="LIVE_SYNC_INTERVAL_HOURS")
+    LIVE_SYNC_TIMEOUT: int = Field(default=15, validation_alias="LIVE_SYNC_TIMEOUT")
     
     model_config = SettingsConfigDict(
         env_file=".env",

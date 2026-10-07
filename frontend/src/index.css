@@ -2,23 +2,157 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------ *
+ * Design tokens. Stored as RGB triples so Tailwind opacity utilities   *
+ * (e.g. bg-brand/10) work. Colours deliberately avoid pure #000/#fff. *
+ * ------------------------------------------------------------------ */
+:root {
+  /* Light theme — warm "paper" canvas instead of pure white. */
+  --canvas: 244 242 238; /* #F4F2EE */
+  --surface: 251 250 247; /* #FBFAF7 */
+  --elevated: 255 254 252; /* soft white, not #FFFFFF */
+  --line: 227 223 215;
+  --ink: 28 27 24; /* soft near-black, not #000000 */
+  --muted: 110 106 97;
+  --brand: 45 88 226; /* indigo blueprint */
+  --brand-ink: 252 251 249;
+  --accent: 199 108 24; /* saffron / kesari */
+  --success: 22 133 96;
+  --danger: 196 58 54;
+  color-scheme: light;
+}
+
+.dark {
+  /* Dark theme — deep slate rather than pure black. */
+  --canvas: 15 18 25; /* #0F1219 */
+  --surface: 22 26 35; /* #161A23 */
+  --elevated: 30 35 46; /* #1E232E */
+  --line: 47 53 67;
+  --ink: 235 233 228;
+  --muted: 150 156 170;
+  --brand: 124 154 255;
+  --brand-ink: 13 16 22;
+  --accent: 240 173 88;
+  --success: 74 197 149;
+  --danger: 240 122 116;
+  color-scheme: dark;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
   }
 
   body {
-    @apply antialiased;
+    @apply bg-canvas text-ink antialiased;
     font-family: 'DM Sans', system-ui, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    text-rendering: optimizeLegibility;
   }
 
-  .font-display {
-    font-family: 'Instrument Sans', 'DM Sans', system-ui, sans-serif;
+  h1, h2, h3, h4 {
+    @apply font-display;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Visible, consistent keyboard focus for accessibility (WCAG 2.4.7). */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand/70 ring-offset-2 ring-offset-canvas;
+  }
+
+  ::selection {
+    background: rgb(var(--brand) / 0.22);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--muted) / 0.35);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--muted) / 0.55);
+    background-clip: content-box;
   }
 }
 
-@layer utilities {
-  .border-white\/8 {
-    border-color: rgba(255, 255, 255, 0.08);
+@layer components {
+  /* Layout */
+  .shell-container {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .card {
+    @apply rounded-2xl border border-line bg-surface shadow-soft;
+  }
+
+  .card-elevated {
+    @apply rounded-2xl border border-line bg-elevated shadow-lift;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold
+      transition-all duration-200 ease-emphasized focus-visible:ring-offset-2 disabled:cursor-not-allowed
+      disabled:opacity-55 active:scale-[0.98];
+  }
+  .btn-primary {
+    @apply btn bg-brand text-brand-ink shadow-soft hover:brightness-110 hover:shadow-lift;
+  }
+  .btn-accent {
+    @apply btn bg-accent text-white hover:brightness-110 hover:shadow-lift;
+  }
+  .btn-outline {
+    @apply btn border border-line bg-surface text-ink hover:bg-elevated;
+  }
+  .btn-ghost {
+    @apply btn text-muted hover:bg-elevated hover:text-ink;
+  }
+
+  .icon-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-surface
+      text-muted transition-all duration-200 hover:bg-elevated hover:text-ink active:scale-95;
+  }
+
+  /* Forms */
+  .field-label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+  .input {
+    @apply w-full rounded-xl border border-line bg-elevated px-4 py-3 text-sm text-ink shadow-sm
+      placeholder:text-muted/70 transition-colors duration-200 hover:border-muted/40
+      focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25;
+  }
+
+  /* Chips & badges */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5
+      text-xs font-medium text-muted transition-all duration-200 hover:border-brand/40 hover:text-ink;
+  }
+  .chip-active {
+    @apply border-brand bg-brand text-brand-ink hover:text-brand-ink;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide;
+  }
+
+  .divider {
+    @apply border-t border-line;
+  }
+
+  /* Skeleton shimmer for perceived performance */
+  .skeleton {
+    @apply rounded-xl bg-elevated;
+    background-image: linear-gradient(90deg, transparent, rgb(var(--muted) / 0.12), transparent);
+    background-size: 200% 100%;
+    @apply animate-shimmer;
   }
 }

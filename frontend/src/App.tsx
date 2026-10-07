@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { FormEvent, useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { apiFetch, clearAuthToken, getAuthToken, setAuthToken } from './api/client'
 import { GuestEntry } from './components/GuestEntry'
 import { Shell } from './components/layout/Shell'
@@ -11,6 +11,7 @@ import { SchemesPage } from './components/pages/SchemesPage'
 import { DEMO_TOKEN, SAVED_SCHEMES_KEY } from './constants'
 import { AppProvider, useApp } from './context/AppContext'
 import type {
+  CatalogueMeta,
   ChatMessage,
   EligibilityResult,
   FontSize,
@@ -18,6 +19,7 @@ import type {
   Lang,
   Profile,
   ProfileUpdatePayload,
+  SchemeUpdate,
   TabId,
 } from './types'
 
@@ -25,9 +27,12 @@ function AppInner() {
   const { activeTab, lang, tr, setActiveTab } = useApp()
   const [token, setTokenState] = useState<string | null>(() => getAuthToken())
   const [apiOnline, setApiOnline] = useState<boolean | null>(null)
+  const [meta, setMeta] = useState<CatalogueMeta | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [results, setResults] = useState<EligibilityResult[]>([])
   const [resultsLoading, setResultsLoading] = useState(false)
+  const [liveUpdates, setLiveUpdates] = useState<SchemeUpdate[]>([])
+  const [liveRefreshing, setLiveRefreshing] = useState(false)
   const [savedIds, setSavedIds] = useState<string[]>(() =>
     JSON.parse(localStorage.getItem(SAVED_SCHEMES_KEY) || '[]'),
   )
@@ -46,7 +51,9 @@ function AppInner() {
     occupation: 'Other',
     annualIncome: 0,
     isDisabled: false,
+    disabilityPercentage: 0,
     isFarmer: false,
+    maritalStatus: 'Single',
     district: 'Visakhapatnam',
   })
 
@@ -63,6 +70,24 @@ function AppInner() {
     apiFetch<HealthStatus>('/api/v1/health')
       .then(() => setApiOnline(true))
       .catch(() => setApiOnline(false))
+    apiFetch<CatalogueMeta>('/api/v1/schemes/meta')
+      .then((data) => setMeta(data))
+      .catch(() => setMeta(null))
+    apiFetch<SchemeUpdate[]>('/api/v1/live/updates')
+      .then((data) => setLiveUpdates(Array.isArray(data) ? data : []))
+      .catch(() => setLiveUpdates([]))
+  }, [])
+
+  const refreshLive = useCallback(async () => {
+    setLiveRefreshing(true)
+    try {
+      const data = await apiFetch<SchemeUpdate[]>('/api/v1/live/sync', { method: 'POST' })
+      setLiveUpdates(Array.isArray(data) ? data : [])
+    } catch {
+      // Keep the previously loaded snapshots if the refresh fails.
+    } finally {
+      setLiveRefreshing(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -93,7 +118,9 @@ function AppInner() {
         occupation: data.occupation || 'Other',
         annualIncome: Number(data.annual_income) || 0,
         isDisabled: data.is_disabled || false,
+        disabilityPercentage: data.disability_percentage || 0,
         isFarmer: data.is_farmer || false,
+        maritalStatus: data.marital_status || 'Single',
         district: data.district || 'Visakhapatnam',
       })
 
@@ -133,7 +160,7 @@ function AppInner() {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
-  const saveProfile = async (e: FormEvent) => {
+  const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!token) return
     setProfileSaving(true)
@@ -146,7 +173,9 @@ function AppInner() {
       occupation: form.occupation,
       annual_income: form.annualIncome,
       is_disabled: form.isDisabled,
+      disability_percentage: form.isDisabled ? form.disabilityPercentage : 0,
       is_farmer: form.isFarmer,
+      marital_status: form.maritalStatus,
       district: form.district,
       state: 'Andhra Pradesh',
     }
@@ -167,41 +196,50 @@ function AppInner() {
     }
   }
 
-  const sendChat = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!chatInput.trim() || !token) return
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const content = text.trim()
+      if (!content || !token) return
 
-    const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: chatInput.trim(),
-      created_at: new Date().toISOString(),
-    }
-    setChatMessages((prev) => [...prev, userMsg])
-    setChatInput('')
-    setChatLoading(true)
+      const userMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content,
+        created_at: new Date().toISOString(),
+      }
+      setChatMessages((prev) => [...prev, userMsg])
+      setChatInput('')
+      setChatLoading(true)
 
-    try {
-      const reply = await apiFetch<ChatMessage>('/api/v1/chat', {
-        method: 'POST',
-        body: JSON.stringify({ content: userMsg.content }),
-      })
-      setChatMessages((prev) => [...prev, reply])
-    } catch {
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: lang === 'en'
-            ? 'Could not reach the assistant. Ensure the backend is running on port 8000.'
-            : 'సహాయకుడిని సంప్రదించలేకపోయాం. backend port 8000 లో run అవుతోందో చూడండి.',
-          created_at: new Date().toISOString(),
-        },
-      ])
-    } finally {
-      setChatLoading(false)
-    }
+      try {
+        const reply = await apiFetch<ChatMessage>('/api/v1/chat', {
+          method: 'POST',
+          body: JSON.stringify({ content }),
+        })
+        setChatMessages((prev) => [...prev, reply])
+      } catch {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content:
+              lang === 'en'
+                ? 'I could not reach the assistant. Please ensure the backend is running on port 8000.'
+                : 'సహాయకుడిని సంప్రదించలేకపోయాం. backend port 8000 లో నడుస్తోందో చూడండి.',
+            created_at: new Date().toISOString(),
+          },
+        ])
+      } finally {
+        setChatLoading(false)
+      }
+    },
+    [token, lang],
+  )
+
+  const askAboutScheme = (name: string) => {
+    setActiveTab('chat')
+    void sendMessage(`Tell me about ${name}: its benefits, eligibility criteria and required documents.`)
   }
 
   const toggleSave = (schemeId: string) => {
@@ -209,39 +247,50 @@ function AppInner() {
   }
 
   if (!token) {
-    return <GuestEntry onEnter={enterDemo} apiOnline={apiOnline} />
+    return <GuestEntry onEnter={enterDemo} apiOnline={apiOnline} meta={meta} />
   }
 
   const displayName = profile?.full_name?.trim() || tr('guestName')
 
   return (
     <>
-      <Shell
-        district={form.district}
-        displayName={displayName}
-        apiOnline={apiOnline}
-        onLogout={logout}
-      >
+      <Shell district={form.district} displayName={displayName} apiOnline={apiOnline} onLogout={logout}>
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
-            {activeTab === 'dashboard' && <DashboardPage results={results} />}
+            {activeTab === 'dashboard' && (
+              <DashboardPage
+                results={results}
+                meta={meta}
+                liveUpdates={liveUpdates}
+                liveRefreshing={liveRefreshing}
+                onRefreshLive={refreshLive}
+              />
+            )}
             {activeTab === 'chat' && (
               <ChatPage
                 messages={chatMessages}
                 input={chatInput}
                 loading={chatLoading}
                 onInputChange={setChatInput}
-                onSend={sendChat}
+                onSend={sendMessage}
               />
             )}
             {activeTab === 'schemes' && (
-              <SchemesPage results={results} loading={resultsLoading} savedIds={savedIds} onToggleSave={toggleSave} />
+              <SchemesPage
+                results={results}
+                loading={resultsLoading}
+                savedIds={savedIds}
+                meta={meta}
+                liveUpdates={liveUpdates}
+                onToggleSave={toggleSave}
+                onAskScheme={askAboutScheme}
+              />
             )}
             {activeTab === 'saved' && <SavedPage results={results} savedIds={savedIds} onToggleSave={toggleSave} />}
             {activeTab === 'profile' && (
@@ -251,25 +300,53 @@ function AppInner() {
         </AnimatePresence>
       </Shell>
 
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-amber-500/30 bg-stone-900 px-5 py-2.5 text-sm text-stone-100 shadow-xl">
-          {toast}
-        </div>
-      )}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full border border-line bg-elevated px-5 py-2.5 text-sm text-ink shadow-lift lg:bottom-8"
+            role="status"
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
+}
+
+const TAB_IDS: TabId[] = ['dashboard', 'chat', 'schemes', 'saved', 'profile']
+
+function tabFromHash(): TabId {
+  const hash = window.location.hash.replace('#', '') as TabId
+  return TAB_IDS.includes(hash) ? hash : 'dashboard'
 }
 
 export default function App() {
   const [lang, setLang] = useState<Lang>('en')
   const [isDark, setIsDark] = useState(true)
   const [fontSize, setFontSize] = useState<FontSize>('normal')
-  const [activeTab, setActiveTab] = useState<TabId>('dashboard')
+  const [activeTab, setActiveTab] = useState<TabId>(() => tabFromHash())
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
-    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
   }, [isDark])
+
+  // Keep the URL hash in sync so tabs are shareable and back/forward works.
+  const navigate = useCallback((tab: TabId) => {
+    setActiveTab(tab)
+    if (tabFromHash() !== tab) {
+      window.history.replaceState(null, '', `#${tab}`)
+    }
+  }, [])
+
+  useEffect(() => {
+    const onHashChange = () => setActiveTab(tabFromHash())
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
 
   return (
     <AppProvider
@@ -280,7 +357,7 @@ export default function App() {
       fontSize={fontSize}
       setFontSize={setFontSize}
       activeTab={activeTab}
-      setActiveTab={setActiveTab}
+      setActiveTab={navigate}
     >
       <AppInner />
     </AppProvider>
