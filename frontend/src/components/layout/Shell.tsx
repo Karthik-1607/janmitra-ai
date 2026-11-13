@@ -63,7 +63,10 @@ export function Shell({ children, district, displayName, apiOnline, onLogout }: 
           </div>
 
           <div className="flex items-center gap-2">
-            <StatusPill online={apiOnline} label={apiOnline ? tr('apiOnline') : tr('apiOffline')} />
+            <StatusPill
+              online={apiOnline}
+              label={apiOnline === null ? tr('apiChecking') : apiOnline ? tr('apiOnline') : tr('apiOffline')}
+            />
             <button type="button" onClick={cycleFont} className="icon-btn" title="Text size" aria-label="Change text size">
               <Type className="h-4 w-4" />
             </button>

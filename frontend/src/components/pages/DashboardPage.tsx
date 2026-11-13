@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowUpRight, CheckCircle2, ExternalLink, FileText, HelpCircle, Radio, RefreshCw, Sparkles } from 'lucide-react'
+import { ArrowUpRight, CheckCircle2, CloudOff, ExternalLink, FileText, HelpCircle, Radio, RefreshCw, Sparkles } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import type { CatalogueMeta, EligibilityResult, SchemeUpdate } from '../../types'
 import { timeAgo } from '../../utils/format'
@@ -7,12 +7,13 @@ import { timeAgo } from '../../utils/format'
 interface DashboardPageProps {
   results: EligibilityResult[]
   meta: CatalogueMeta | null
+  apiOnline: boolean | null
   liveUpdates: SchemeUpdate[]
   liveRefreshing: boolean
   onRefreshLive: () => void
 }
 
-export function DashboardPage({ results, meta, liveUpdates, liveRefreshing, onRefreshLive }: DashboardPageProps) {
+export function DashboardPage({ results, meta, apiOnline, liveUpdates, liveRefreshing, onRefreshLive }: DashboardPageProps) {
   const { tr, lang, setActiveTab } = useApp()
 
   const eligible = results.filter((r) => r.eligible)
@@ -63,6 +64,16 @@ export function DashboardPage({ results, meta, liveUpdates, liveRefreshing, onRe
           <MatchRing value={matchRate} caption={tr('statEligible')} />
         </div>
       </motion.section>
+
+      {apiOnline === false && (
+        <section className="flex items-start gap-3 rounded-2xl border border-danger/25 bg-danger/[0.06] p-4 text-sm">
+          <CloudOff className="mt-0.5 h-5 w-5 shrink-0 text-danger" />
+          <div>
+            <p className="font-semibold text-ink">{tr('offlineTitle')}</p>
+            <p className="mt-1 leading-relaxed text-muted">{tr('offlineBody')}</p>
+          </div>
+        </section>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map((stat) => (

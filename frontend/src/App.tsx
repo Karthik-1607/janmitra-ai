@@ -23,6 +23,22 @@ import type {
   TabId,
 } from './types'
 
+const PREFERENCES_KEY = 'janmitra_preferences'
+
+interface UserPreferences {
+  lang?: Lang
+  isDark?: boolean
+  fontSize?: FontSize
+}
+
+function readPreferences(): UserPreferences {
+  try {
+    return JSON.parse(localStorage.getItem(PREFERENCES_KEY) || '{}') as UserPreferences
+  } catch {
+    return {}
+  }
+}
+
 function AppInner() {
   const { activeTab, lang, tr, setActiveTab } = useApp()
   const [token, setTokenState] = useState<string | null>(() => getAuthToken())
@@ -267,6 +283,7 @@ function AppInner() {
               <DashboardPage
                 results={results}
                 meta={meta}
+                apiOnline={apiOnline}
                 liveUpdates={liveUpdates}
                 liveRefreshing={liveRefreshing}
                 onRefreshLive={refreshLive}
@@ -325,14 +342,18 @@ function tabFromHash(): TabId {
 }
 
 export default function App() {
-  const [lang, setLang] = useState<Lang>('en')
-  const [isDark, setIsDark] = useState(true)
-  const [fontSize, setFontSize] = useState<FontSize>('normal')
+  const [lang, setLang] = useState<Lang>(() => readPreferences().lang ?? 'en')
+  const [isDark, setIsDark] = useState<boolean>(() => readPreferences().isDark ?? true)
+  const [fontSize, setFontSize] = useState<FontSize>(() => readPreferences().fontSize ?? 'normal')
   const [activeTab, setActiveTab] = useState<TabId>(() => tabFromHash())
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
   }, [isDark])
+
+  useEffect(() => {
+    localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ lang, isDark, fontSize }))
+  }, [lang, isDark, fontSize])
 
   // Keep the URL hash in sync so tabs are shareable and back/forward works.
   const navigate = useCallback((tab: TabId) => {

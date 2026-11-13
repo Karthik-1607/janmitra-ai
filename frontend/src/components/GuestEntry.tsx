@@ -54,11 +54,15 @@ export function GuestEntry({ onEnter, apiOnline, meta }: GuestEntryProps) {
           <div className="flex items-center gap-3">
             <span
               className={`badge hidden bg-elevated sm:inline-flex ${
-                apiOnline === false ? 'text-danger' : 'text-success'
+                apiOnline === false ? 'text-danger' : apiOnline === null ? 'text-muted' : 'text-success'
               }`}
             >
-              <span className={`h-1.5 w-1.5 rounded-full ${apiOnline === false ? 'bg-danger' : 'bg-success animate-pulse-subtle'}`} />
-              {apiOnline === false ? tr('apiOffline') : tr('apiOnline')}
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  apiOnline === false ? 'bg-danger' : apiOnline === null ? 'bg-muted' : 'animate-pulse-subtle bg-success'
+                }`}
+              />
+              {apiOnline === false ? tr('apiOffline') : apiOnline === null ? tr('apiChecking') : tr('apiOnline')}
             </span>
             <button
               type="button"
