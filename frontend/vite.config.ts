@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    // The sandbox exposes this dev server through a forwarded hostname.
+    allowedHosts: true,
     proxy: {
       '/api': {
         // Use 127.0.0.1 (not "localhost") so the proxy targets the IPv4 address
