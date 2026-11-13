@@ -39,6 +39,24 @@ function readPreferences(): UserPreferences {
   }
 }
 
+function dedupeLiveUpdates(updates: SchemeUpdate[]): SchemeUpdate[] {
+  const seen = new Set<string>()
+  return updates.filter((update) => {
+    const headline = (update.headline || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+    const key = `${update.source_label || ''}|${headline || update.source_url}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+function formatDisplayName(value: string): string {
+  return value
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/(^|[\s-])\S/g, (letter) => letter.toUpperCase())
+}
+
 function AppInner() {
   const { activeTab, lang, tr, setActiveTab } = useApp()
   const [token, setTokenState] = useState<string | null>(() => getAuthToken())
@@ -90,7 +108,7 @@ function AppInner() {
       .then((data) => setMeta(data))
       .catch(() => setMeta(null))
     apiFetch<SchemeUpdate[]>('/api/v1/live/updates')
-      .then((data) => setLiveUpdates(Array.isArray(data) ? data : []))
+      .then((data) => setLiveUpdates(Array.isArray(data) ? dedupeLiveUpdates(data) : []))
       .catch(() => setLiveUpdates([]))
   }, [])
 
@@ -98,7 +116,7 @@ function AppInner() {
     setLiveRefreshing(true)
     try {
       const data = await apiFetch<SchemeUpdate[]>('/api/v1/live/sync', { method: 'POST' })
-      setLiveUpdates(Array.isArray(data) ? data : [])
+      setLiveUpdates(Array.isArray(data) ? dedupeLiveUpdates(data) : [])
     } catch {
       // Keep the previously loaded snapshots if the refresh fails.
     } finally {
@@ -126,7 +144,7 @@ function AppInner() {
       })
       setProfile(data)
       setForm({
-        fullName: data.full_name || '',
+        fullName: formatDisplayName(data.full_name || ''),
         phoneNumber: data.phone_number || '',
         age: data.age || 18,
         gender: data.gender || 'Male',
@@ -266,7 +284,7 @@ function AppInner() {
     return <GuestEntry onEnter={enterDemo} apiOnline={apiOnline} meta={meta} />
   }
 
-  const displayName = profile?.full_name?.trim() || tr('guestName')
+  const displayName = formatDisplayName(profile?.full_name || '') || tr('guestName')
 
   return (
     <>
@@ -304,7 +322,6 @@ function AppInner() {
                 loading={resultsLoading}
                 savedIds={savedIds}
                 meta={meta}
-                liveUpdates={liveUpdates}
                 onToggleSave={toggleSave}
                 onAskScheme={askAboutScheme}
               />

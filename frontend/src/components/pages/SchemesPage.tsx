@@ -13,32 +13,25 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
-import type { CatalogueMeta, EligibilityResult, SchemeUpdate } from '../../types'
-import { timeAgo } from '../../utils/format'
+import type { CatalogueMeta, EligibilityResult } from '../../types'
 
 interface SchemesPageProps {
   results: EligibilityResult[]
   loading: boolean
   savedIds: string[]
   meta: CatalogueMeta | null
-  liveUpdates: SchemeUpdate[]
   onToggleSave: (id: string) => void
   onAskScheme: (name: string) => void
 }
 
 type StatusFilter = 'all' | 'eligible' | 'ineligible'
 
-export function SchemesPage({ results, loading, savedIds, meta, liveUpdates, onToggleSave, onAskScheme }: SchemesPageProps) {
-  const { tr, lang } = useApp()
+export function SchemesPage({ results, loading, savedIds, meta, onToggleSave, onAskScheme }: SchemesPageProps) {
+  const { tr } = useApp()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<string>('all')
   const [status, setStatus] = useState<StatusFilter>('all')
   const [expanded, setExpanded] = useState<string | null>(null)
-
-  const liveByCode = useMemo(
-    () => Object.fromEntries(liveUpdates.map((u) => [u.scheme_code, u])),
-    [liveUpdates],
-  )
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -174,26 +167,6 @@ export function SchemesPage({ results, loading, savedIds, meta, liveUpdates, onT
 
                 <h3 className="font-display text-xl font-semibold tracking-tight">{result.scheme_name}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{result.benefits_summary}</p>
-
-                {liveByCode[result.scheme_code ?? ''] && (
-                  <a
-                    href={liveByCode[result.scheme_code ?? ''].source_url}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="mt-3 block rounded-xl border border-success/25 bg-success/[0.06] p-3 transition-colors hover:border-success/50"
-                  >
-                    <span className="mb-1 flex items-center gap-2">
-                      <span className="badge bg-success/15 text-success">{tr('liveBadge')}</span>
-                      <span className="text-[11px] font-medium text-muted">
-                        {liveByCode[result.scheme_code ?? ''].source_label} ·{' '}
-                        {timeAgo(liveByCode[result.scheme_code ?? ''].fetched_at, lang)}
-                      </span>
-                    </span>
-                    <span className="line-clamp-2 text-xs leading-relaxed text-muted">
-                      {liveByCode[result.scheme_code ?? ''].headline}
-                    </span>
-                  </a>
-                )}
 
                 <div className="mt-4">
                   <button

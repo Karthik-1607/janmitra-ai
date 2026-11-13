@@ -20,7 +20,7 @@ export function SavedPage({ results, savedIds, onToggleSave }: SavedPageProps) {
           {tr('savedTitle')}
         </h1>
         <p className="mt-1 text-sm text-muted">
-          {saved.length} {tr('statMatched').toLowerCase()}
+          {tr('savedCount', { n: saved.length })}
         </p>
       </div>
 

@@ -84,7 +84,7 @@ export function DashboardPage({ results, meta, apiOnline, liveUpdates, liveRefre
         ))}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5">
         <Panel
           title={tr('eligibleTitle')}
           icon={<CheckCircle2 className="h-5 w-5 text-success" />}

@@ -25,6 +25,13 @@ interface ProfilePageProps {
   onSubmit: (e: FormEvent) => void
 }
 
+function titleCaseName(value: string): string {
+  return value
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/(^|[\s-])\S/g, (letter) => letter.toUpperCase())
+}
+
 export function ProfilePage({ form, saving, onChange, onSubmit }: ProfilePageProps) {
   const { tr } = useApp()
 
@@ -71,6 +78,8 @@ export function ProfilePage({ form, saving, onChange, onSubmit }: ProfilePagePro
               className="input"
               value={form.fullName}
               onChange={(e) => onChange('fullName', e.target.value)}
+              onFocus={(e) => e.currentTarget.select()}
+              onBlur={(e) => onChange('fullName', titleCaseName(e.target.value))}
             />
           </Field>
           <Field label={tr('phone')}>
@@ -79,6 +88,7 @@ export function ProfilePage({ form, saving, onChange, onSubmit }: ProfilePagePro
               className="input"
               value={form.phoneNumber}
               onChange={(e) => onChange('phoneNumber', e.target.value)}
+              onFocus={(e) => e.currentTarget.select()}
             />
           </Field>
           <Field label={tr('age')}>
@@ -90,6 +100,7 @@ export function ProfilePage({ form, saving, onChange, onSubmit }: ProfilePagePro
               className="input"
               value={form.age}
               onChange={(e) => onChange('age', Number(e.target.value))}
+              onFocus={(e) => e.currentTarget.select()}
             />
           </Field>
           <Field label={tr('gender')}>
@@ -159,6 +170,7 @@ export function ProfilePage({ form, saving, onChange, onSubmit }: ProfilePagePro
               className="input"
               value={form.annualIncome}
               onChange={(e) => onChange('annualIncome', Number(e.target.value))}
+              onFocus={(e) => e.currentTarget.select()}
             />
           </Field>
           <Field label={tr('disabilityPercent')}>
@@ -170,6 +182,7 @@ export function ProfilePage({ form, saving, onChange, onSubmit }: ProfilePagePro
               className="input disabled:opacity-50"
               value={form.disabilityPercentage}
               onChange={(e) => onChange('disabilityPercentage', Number(e.target.value))}
+              onFocus={(e) => e.currentTarget.select()}
             />
           </Field>
         </div>

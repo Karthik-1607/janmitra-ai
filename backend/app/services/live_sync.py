@@ -84,6 +84,21 @@ NAV_NOISE = (
 _AMOUNT_RE = re.compile(r"(?:₹|Rs\.?|INR)\s*([0-9][0-9,]{2,})(?:\s*(?:/-|per|\/))?", re.IGNORECASE)
 
 
+def _format_amount(value: str) -> str | None:
+    digits = re.sub(r"\D", "", value)
+    if not digits:
+        return None
+    if len(digits) <= 3:
+        return digits
+    last_three = digits[-3:]
+    leading = digits[:-3]
+    groups: list[str] = []
+    while leading:
+        groups.insert(0, leading[-2:])
+        leading = leading[:-2]
+    return ",".join(groups + [last_three])
+
+
 class _TextExtractor(HTMLParser):
     """Collect visible text, ignoring script/style/svg blocks."""
 
@@ -121,12 +136,24 @@ def _clean_html(html: str) -> str:
 
 
 def _extract_amounts(text: str) -> list[str]:
-    seen: list[str] = []
+    seen: set[str] = set()
+    amounts: list[str] = []
     for match in _AMOUNT_RE.findall(text):
-        amount = match.rstrip(",").strip()
-        if amount not in seen:
-            seen.append(amount)
-    return seen[:8]
+        digits = re.sub(r"\D", "", match)
+        formatted = _format_amount(match)
+        if not digits or not formatted or digits in seen:
+            continue
+        seen.add(digits)
+        amounts.append(formatted)
+    return amounts[:8]
+
+
+def _truncate_notice(text: str, limit: int = 240) -> str:
+    clean = re.sub(r"\s+", " ", text).strip()
+    if len(clean) < limit or (len(clean) == limit and not clean[-1].isalnum()):
+        return clean
+    trimmed = clean[:limit].rsplit(" ", 1)[0].rstrip(" ,;:-")
+    return f"{trimmed}…"
 
 
 def _is_noise(sentence: str) -> bool:
@@ -161,10 +188,10 @@ def _extract_headline(text: str, fallback: str, focus: list[str] | None = None) 
         if score > best_score or (score == best_score and len(clean) > len(best)):
             best, best_score = clean, score
     if best:
-        return best[:240]
+        return _truncate_notice(best)
     if focus_terms is not None:
         return None
-    return fallback[:240]
+    return _truncate_notice(fallback)
 
 
 def fetch_source(url: str, focus: list[str] | None = None) -> tuple[str, str] | None:
@@ -248,4 +275,25 @@ def run_sync() -> int:
 
 
 def latest_updates(db: Session) -> Iterable[SchemeUpdate]:
-    return db.query(SchemeUpdate).order_by(SchemeUpdate.fetched_at.desc()).all()
+    updates = db.query(SchemeUpdate).order_by(SchemeUpdate.fetched_at.desc()).all()
+    seen: set[str] = set()
+    unique: list[SchemeUpdate] = []
+    for update in updates:
+        update.headline = _truncate_notice(update.headline or "")
+        raw_amounts = update.amounts or []
+        normalized_amounts: list[str] = []
+        seen_amounts: set[str] = set()
+        for amount in raw_amounts:
+            digits = re.sub(r"\D", "", str(amount))
+            formatted = _format_amount(str(amount))
+            if digits and formatted and digits not in seen_amounts:
+                seen_amounts.add(digits)
+                normalized_amounts.append(formatted)
+        update.amounts = normalized_amounts
+        headline = re.sub(r"[^a-z0-9]+", " ", (update.headline or "").lower()).strip()
+        key = f"{update.source_label or ''}|{headline or update.source_url}"
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(update)
+    return unique

@@ -157,14 +157,11 @@ def rule_based_response(user_prompt: str) -> tuple[str, list[dict]]:
 
 
 def generate_chat_response(user_prompt: str) -> tuple[str, list[dict], str]:
-    """Returns (content, sources, engine_used)."""
-    groq = _groq_complete(user_prompt)
-    if groq:
-        return groq, [{"title": "AP Government Portal", "url": "https://www.ap.gov.in"}], "groq"
+    """Return a deterministic response grounded in the curated catalogue.
 
-    ollama = _ollama_complete(user_prompt)
-    if ollama:
-        return ollama, [{"title": "AP Government Portal", "url": "https://www.ap.gov.in"}], "ollama"
-
+    External language models are intentionally not used for the public assistant:
+    they can sound confident while inventing amounts, deadlines, or eligibility
+    rules. The rule engine gives citizens repeatable answers with known sources.
+    """
     content, sources = rule_based_response(user_prompt)
     return content, sources, "rules"

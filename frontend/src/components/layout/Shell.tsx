@@ -89,12 +89,17 @@ export function Shell({ children, district, displayName, apiOnline, onLogout }: 
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
 
-            <div className="ml-1 hidden items-center gap-2 rounded-full border border-line bg-surface py-1 pl-1 pr-3 sm:flex">
+            <button
+              type="button"
+              onClick={() => setActiveTab('profile')}
+              className="ml-1 hidden items-center gap-2 rounded-full border border-line bg-surface py-1 pl-1 pr-3 text-left transition-colors hover:border-brand/40 hover:bg-elevated sm:flex"
+              aria-label={tr('profileTitle')}
+            >
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-xs font-semibold text-brand-ink">
                 {displayName.charAt(0).toUpperCase()}
               </span>
               <span className="max-w-[9rem] truncate text-xs font-medium">{displayName}</span>
-            </div>
+            </button>
 
             <button type="button" onClick={onLogout} className="icon-btn" title={tr('logout')} aria-label={tr('logout')}>
               <LogOut className="h-4 w-4 text-danger" />
