@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:5173",  # React default
         "http://localhost:3000",
-        "https://janmitra-ai.vercel.app",  # Production Vercel domain stub
+        "https://janmitra-ai-rn95.onrender.com",  # Public Render frontend
     ]
     
     # Database Settings
