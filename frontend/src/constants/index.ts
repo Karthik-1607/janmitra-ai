@@ -27,6 +27,4 @@ export const AP_DISTRICTS = [
   'YSR Kadapa',
 ] as const
 
-export const DEMO_TOKEN = 'mock-token'
-
 export const SAVED_SCHEMES_KEY = 'janmitra_saved_schemes'

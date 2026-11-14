@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useState } from 'react'
-import { apiFetch, clearAuthToken, getAuthToken, setAuthToken } from './api/client'
+import { apiFetch, clearAuthToken, getAuthToken, getOrCreateGuestToken, setAuthToken } from './api/client'
 import { GuestEntry } from './components/GuestEntry'
 import { Shell } from './components/layout/Shell'
 import { ChatPage } from './components/pages/ChatPage'
@@ -8,7 +8,7 @@ import { DashboardPage } from './components/pages/DashboardPage'
 import { ProfileFormState, ProfilePage } from './components/pages/ProfilePage'
 import { SavedPage } from './components/pages/SavedPage'
 import { SchemesPage } from './components/pages/SchemesPage'
-import { DEMO_TOKEN, SAVED_SCHEMES_KEY } from './constants'
+import { SAVED_SCHEMES_KEY } from './constants'
 import { AppProvider, useApp } from './context/AppContext'
 import type {
   CatalogueMeta,
@@ -178,8 +178,9 @@ function AppInner() {
   }, [token, loadProfile])
 
   const enterDemo = () => {
-    setAuthToken(DEMO_TOKEN)
-    setTokenState(DEMO_TOKEN)
+    const guestToken = getOrCreateGuestToken()
+    setAuthToken(guestToken)
+    setTokenState(guestToken)
   }
 
   const logout = () => {
